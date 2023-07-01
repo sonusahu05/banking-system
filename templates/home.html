@@ -57,18 +57,6 @@
         .account-details p {
             margin-bottom: 10px;
         }
-
-        .transaction-form {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
-        }
-
-        .transaction-form input[type="text"],
-        .transaction-form input[type="number"] {
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
@@ -88,26 +76,56 @@
             </div>
         </form>
     {% else %}
-        <div class="account-details">
-            <p>Account Type: {{ data.account_type }}</p>
-            <p>Account Number: {{ data.account_id }}</p>
-            <p>Balance: {{ data.balance }}</p>
-        </div>
+        <p>Account Type: {{ data.account_type }}</p>
+        <p>Account Number: {{ data.account_id }}</p>
+        <input type="hidden" id="account_number" value="{{ data.account_id }}">
+        <p>Balance: {{ data.balance }}</p>
     {% endif %}
 
+    
+
     <h2>Transfer Money</h2>
-    <form class="transaction-form" method="post" action="/transfer">
+    <p>
+        {% for i in messages %}
+            {{ i }}
+        {% endfor %}
+    </p>
+    <form method="post" action="/transfer">
         {% csrf_token %}
-        <input type="text" id="from_account" name="from_account" value="{{ data.account_id }}">
+        <input type="text" id="from_account" name="from_account" value="">
         <input type="text" id="to_account" name="to_account" placeholder="To Account" required>
-        <input type="number" id="amount" name="amount" placeholder="Amount" required>
+        <input type="text" id="amount" name="amount" placeholder="Amount" required>
         <button type="submit">Transfer</button>
     </form>
 
     <h2>Deposit Money</h2>
-    <form class="transaction-form" method="post" action="/deposit">
+    <form method="post" action="/deposit">
         {% csrf_token %}
-        <input type="text" id="acc" name="acc" value="{{ data.account_id }}">
-        <input type="number" id="amount" name="amount" placeholder="Amount" required>
+        <input type="text" id="acc" name="acc" value="">
+        <input type="text" id="amount" name="amount" placeholder="Amount" required>
         <button type="submit">Deposit</button>
-    </form
+    </form>
+
+    <h2>Withdraw Money</h2>
+    <form method="post" action="/withdraw">
+        {% csrf_token %}
+        <input type="text" id="acc2" name="acc2" value="">
+        <input type="text" id="amount" name="amount" placeholder="Amount" required>
+        <button type="submit">Withdraw</button>
+    </form>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const accountNumberInput = document.querySelector('#account_number');
+            const fromAccountInput = document.querySelector('#from_account');
+            const account_number = document.querySelector('#acc');
+            const account_number2 = document.querySelector('#acc2');
+            account_number2.value = accountNumberInput.value;
+            fromAccountInput.value = accountNumberInput.value;
+            account_number.value = accountNumberInput.value;
+
+        });
+    </script>
+</body>
+</html>
+
