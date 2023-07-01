@@ -1,9 +1,10 @@
+from datetime import datetime
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User,auth
 from django.contrib import messages
 # Create your views here.
-from .models import User as new_user , Account
+from .models import User as new_user , Account, Transaction
 
 def loginpage(request):
     return render(request, 'login.html', {})
@@ -55,13 +56,14 @@ def login(request):
 
         if user is not None:
             auth.login(request, user)
-            login_users = new_user.objects.all()
-            acc_details = Account.objects.all()
-            data={
-                'login_users':login_users,
-                'acc_details':acc_details
-            }
-            return render(request, 'home.html', {'data':data})
+            cur=user.username
+            login_users = new_user.objects.filter(username=cur).first()
+            if login_users.has_account == False:
+                return render(request, 'home.html', {'data' : None})
+            else:
+                a=login_users.user_id
+                acc_details = Account.objects.filter(user_id=a).first()
+                return render(request, 'home.html', {'data':acc_details})
         else:
             messages.info(request, 'Invalid credentials')
     return redirect('/')
@@ -73,29 +75,77 @@ def logout(request):
         
 def create_account(request):
     account_type = request.POST['account_type']
-    if Account.objects.exists():
-        last_account = Account.objects.latest('account_number')
-        account_number = int(last_account.account_number) + 1
-    else:
-        account_number = 1000001
-
-    user_id = request.POST['user_id']
-    login_user = new_user.objects.filter(user_id=user_id).first()
-    login_user.has_account = True
-    login_user.save()
+    username = request.user.username
+    user = new_user.objects.filter(username=username).first()
+    user_id = user.user_id
+    user.has_account = True
+    user.save()
 
     new_account = Account(
         account_type=account_type,
         balance=0,
-        account_number=str(account_number),
         user_id=user_id
     )
     new_account.save()
-    login_users = new_user.objects.all()
-    acc_details = Account.objects.all()
-    data={
-        'login_users':login_users,
-        'acc_details':acc_details
-    }
-    return render(request, 'home.html', {"data" : data})
+    acc_details = Account.objects.filter(user_id=user_id).first()
+    return render(request, 'home.html', {'data':acc_details})
 
+
+def transfer(request):
+    acc=request.POST['from_account']
+    to_acc=request.POST['to_account']
+    amount=request.POST['amount']
+    account= Account.objects.filter(account_id=acc).first()
+    if account.balance<int(amount):
+        messages.info(request, 'Insufficient balance')
+    else:
+        account.balance=account.balance-int(amount)
+        account.save()
+        account2= Account.objects.filter(account_id=to_acc).first()
+        account2.balance=account2.balance+int(amount)
+        account2.save()
+        transfer = Transaction(
+            account=account,
+            receiver_account_number=to_acc,
+            amount=amount,
+            transaction_type='debit',
+            transaction_date=datetime.now()
+        )
+        transfer.save()
+    return render(request, 'home.html', {'data':account})
+    
+
+def deposit(request):
+    acc=request.POST['acc']
+    amount=request.POST['amount']
+    account= Account.objects.filter(account_id=acc).first()
+    account.balance=account.balance+int(amount)
+    account.save()
+    transfer = Transaction(
+            account=account,
+            receiver_account_number=acc,
+            amount=amount,
+            transaction_type='credit',
+            transaction_date=datetime.now()
+        )
+    transfer.save()
+    return render(request, 'home.html', {'data':account})
+
+def withdraw(request):
+    acc=request.POST['acc2']
+    amount=request.POST['amount']
+    account= Account.objects.filter(account_id=acc).first()
+    if account.balance<int(amount):
+        messages.info(request, 'Insufficient balance')
+    else:
+        account.balance=account.balance-int(amount)
+        account.save()
+        transfer = Transaction(
+            account=account,
+            receiver_account_number=acc,
+            amount=amount,
+            transaction_type='debit',
+            transaction_date=datetime.now()
+        )
+        transfer.save()
+    return render(request, 'home.html', {'data':account})

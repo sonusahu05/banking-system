@@ -3,38 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Welcome</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f1f1f1;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 20px;
+        }
+
+        form {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            padding: 5px;
+            width: 200px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .account-details {
+            margin-top: 20px;
+        }
+
+        .account-details p {
+            margin-bottom: 10px;
+        }
+
+        .transaction-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .transaction-form input[type="text"],
+        .transaction-form input[type="number"] {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome user {{ user.username }}</h1>
+    <h1>Welcome, {{ user.username }}</h1>
     <form action="/logout" method="post">
         {% csrf_token %}
         <button type="submit">Logout</button>
     </form>
-    {% for i in data.login_users %}
-        {% if i.username == user.username %}
-                {% if i.has_account %}
-                    <h2>Account Details</h2>
-                    {% for j in data.acc_details %}
-                        {% if j.user_id == i.user_id %}
-                            <p>Account Type: {{ j.account_type }}</p>
-                            <p>Account Number: {{ j.account_number }}</p>
-                            <p>Balance: {{ j.balance }}</p>
-                        {% endif %}
-                    {% endfor %}
-                {% else %}
-                    <form method="post" action="/create_account">
-                        {% csrf_token %}
-                        <br>
-                        <label for="account_type">Account Type:</label>
-                        <input type="text" id="account_type" name="account_type" required>
-                        <br>
-                        <input type="hidden" id="user_id" name="user_id" value="{{ i.user_id }}">
-                        <input type="submit" value="Create Account">
-                    </form>
-                {% endif %}
-        {% endif %}
-    {% endfor %}
 
-</body>
-</html>
+    {% if not data %}
+        <form method="post" action="/create_account">
+            {% csrf_token %}
+            <div class="account-form">
+                <label for="account_type">Account Type:</label>
+                <input type="text" id="account_type" name="account_type" required>
+                <button type="submit">Create Account</button>
+            </div>
+        </form>
+    {% else %}
+        <div class="account-details">
+            <p>Account Type: {{ data.account_type }}</p>
+            <p>Account Number: {{ data.account_id }}</p>
+            <p>Balance: {{ data.balance }}</p>
+        </div>
+    {% endif %}
+
+    <h2>Transfer Money</h2>
+    <form class="transaction-form" method="post" action="/transfer">
+        {% csrf_token %}
+        <input type="text" id="from_account" name="from_account" value="{{ data.account_id }}">
+        <input type="text" id="to_account" name="to_account" placeholder="To Account" required>
+        <input type="number" id="amount" name="amount" placeholder="Amount" required>
+        <button type="submit">Transfer</button>
+    </form>
+
+    <h2>Deposit Money</h2>
+    <form class="transaction-form" method="post" action="/deposit">
+        {% csrf_token %}
+        <input type="text" id="acc" name="acc" value="{{ data.account_id }}">
+        <input type="number" id="amount" name="amount" placeholder="Amount" required>
+        <button type="submit">Deposit</button>
+    </form
