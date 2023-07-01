@@ -6,10 +6,35 @@
     <title>Document</title>
 </head>
 <body>
-    <h1>Welcome user {{user.first_name}}</h1>
+    <h1>Welcome user {{ user.username }}</h1>
     <form action="/logout" method="post">
         {% csrf_token %}
         <button type="submit">Logout</button>
     </form>
+    {% for i in data.login_users %}
+        {% if i.username == user.username %}
+                {% if i.has_account %}
+                    <h2>Account Details</h2>
+                    {% for j in data.acc_details %}
+                        {% if j.user_id == i.user_id %}
+                            <p>Account Type: {{ j.account_type }}</p>
+                            <p>Account Number: {{ j.account_number }}</p>
+                            <p>Balance: {{ j.balance }}</p>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <form method="post" action="/create_account">
+                        {% csrf_token %}
+                        <br>
+                        <label for="account_type">Account Type:</label>
+                        <input type="text" id="account_type" name="account_type" required>
+                        <br>
+                        <input type="hidden" id="user_id" name="user_id" value="{{ i.user_id }}">
+                        <input type="submit" value="Create Account">
+                    </form>
+                {% endif %}
+        {% endif %}
+    {% endfor %}
+
 </body>
 </html>
